@@ -1,0 +1,5 @@
+src/app.spec
+src/P Manager.spec
+src/__pycache__/*
+src/build/*
+src/dist/*
