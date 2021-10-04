@@ -8,7 +8,6 @@ import pathlib
 import os
 file_path = pathlib.Path(__file__).parent.resolve()
 os.chdir(file_path)
-import pandas as pd
 import boto3
 
 class Pass_Manager(object):
@@ -42,6 +41,10 @@ class Pass_Manager(object):
     def add_item(self,item):
         self.table.put_item(Item=item)
 
+    #TODO
+    def delete_item(self,key):
+        self.table.delete_item(Key=key)
+
 class Pass_Manager_UI(object):
     def __init__(self,root,pass_manager):
         self.pass_manager = pass_manager
@@ -54,10 +57,12 @@ class Pass_Manager_UI(object):
         sa_btn = ttk.Button(frame, text = 'Show all',command = self.show_all)
         ft_btn = ttk.Button(frame, text = 'Find group',command = self.find_group)
         at_btn = ttk.Button(frame, text = 'Add new item',command = self.add_item)
+        dt_btn = ttk.Button(frame, text = 'Delete item',command = self.delete_item)
         frame.grid(column=0,row=0)
         sa_btn.grid(column=0,row=0,padx=10)
         ft_btn.grid(column=0,row=1,padx=10)
         at_btn.grid(column=0,row=2,padx=10)
+        dt_btn.grid(column=0,row=3,padx=10)
 
         self.t = Text(self.root, wrap = "none")
         self.t.tag_configure("modifiedfont",font=font.Font(family='Helvetica',size=14))
@@ -173,4 +178,47 @@ class Pass_Manager_UI(object):
         dlg.wait_window()     # block until window is destroyed
         self.t['state'] = 'disabled'
 
+    def delete_item(self):
+        self.t['state'] = 'normal'
+        def dismiss():
+            dlg.grab_release()
+            dlg.destroy()
+        def delete():
+            key = {
+                "service_type":gr_name.get(),
+                "service_name":it_name.get(),
+            }
+            okcancel = messagebox.askokcancel("Confirm","Are you sure to delete this item?")
+            if okcancel:
+                self.pass_manager.delete_item(key)
+                dismiss()
+        dlg = Toplevel(self.root)
+        dlg.geometry("220x100+400+100")
+
+        btn = ttk.Frame(dlg)
+        btn.grid(column=0,row=1,pady=10,sticky=E)
+        add_btn = ttk.Button(btn, text="Delete", command=delete)
+        cancel_btn = ttk.Button(btn, text="Cancel", command=dismiss)
+
+        add_btn.grid(column=0,row=0)
+        cancel_btn.grid(column=1,row=0,sticky=(E))
+
+        inp = ttk.Frame(dlg)
+        inp.grid(column=0,row=0)
+        gr_name_lbl = Label(inp, text = ' Group Name ')
+        gr_name = Entry(inp)
+        it_name_lbl = Label(inp, text = ' Item Name ')
+        it_name = Entry(inp)
+
+        gr_name_lbl.grid(column=0,row=0,sticky=W)
+        it_name_lbl.grid(column=0,row=1,sticky=W)
+        gr_name.grid(column=1,row=0,sticky=E,pady=4)
+        it_name.grid(column=1,row=1,sticky=E,pady=0)
+        
+        dlg.protocol("WM_DELETE_WINDOW", dismiss) # intercept close button
+        dlg.transient(self.root)   # dialog window is related to main
+        dlg.wait_visibility() # can't grab until window appears, so we wait
+        dlg.grab_set()        # ensure all input goes to our window
+        dlg.wait_window()     # block until window is destroyed
+        self.t['state'] = 'disabled'
 
